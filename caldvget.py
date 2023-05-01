@@ -9,6 +9,7 @@ class CalInfo:
         self.url = None
         self.usrname = None
         self.passwd = None
+        self.cal_shortnames = {}
 
     def readconfig(self, confname):
         cp = configparser.ConfigParser()
@@ -17,11 +18,13 @@ class CalInfo:
         except configparser.Error:
             raise "parse error config file"
 
-        for (sectname, proxy) in cp.items():
-            if sectname=='server':
-                self.url = proxy.get('url')
-                self.usrname = proxy.get('username')
-                self.passwd = proxy.get('password')
+        for (sectname, sect) in cp.items():
+            if 'url' in sect.keys():
+                self.url = sect.get('url')
+                self.usrname = sect.get('username')
+                self.passwd = sect.get('password')
+            elif 'calname' in sect.keys():
+                self.cal_shortnames[sect['calname']] = sectname
 
 
 class CalDVGetState:
@@ -44,9 +47,28 @@ class CalDVGetState:
 
     def fetch_calendars(self):
         self.calendars = {}
+        cal_shortnames = self.calinfo.cal_shortnames
         for c in self.principal.calendars():
-            self.calendars[c.name] = c
+            shortname = cal_shortnames.get(c.name, c.name)
+            self.calendars[shortname] = c
 
+    def print_calendars(self, config_style=False):
+        if not config_style:
+            for calname in self.calendars.keys():
+                print(calname)
+        else:
+            shortnames = self.calinfo.cal_shortnames
+            for (i,c) in enumerate(self.calendars.values()):
+                sectname = shortnames.get(c.name)
+                if not sectname:
+                    sectname = "Calendar %d" % i
+                print("[%s]\ncalname = %s\n" % (sectname, c.name))
+
+
+def test():
+    cdget = CalDVGetState()
+    cdget.connect()
+    cdget.print_calendars(True)
 
 
 if __name__ == "__main__":
