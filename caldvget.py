@@ -52,17 +52,13 @@ class CalDVGetState:
             shortname = cal_shortnames.get(c.name, c.name)
             self.calendars[shortname] = c
 
-    def print_calendars(self, config_style=False):
-        if not config_style:
+    def print_calendars(self, full_names=False):
+        if not full_names:
             for calname in self.calendars.keys():
                 print(calname)
         else:
-            shortnames = self.calinfo.cal_shortnames
-            for (i,c) in enumerate(self.calendars.values()):
-                sectname = shortnames.get(c.name)
-                if not sectname:
-                    sectname = "Calendar %d" % i
-                print("[%s]\ncalname = %s\n" % (sectname, c.name))
+            for c in self.calendars.values():
+                print(c.name)
 
 
 def test():
@@ -71,5 +67,22 @@ def test():
     cdget.print_calendars(True)
 
 
+def parse_commandline():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--cals', action='store_true',
+                        help='print available calendars')
+    parser.add_argument('--cals-long', action='store_true',
+                        help='print available calendars with full names')
+
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    pass
+    args = parse_commandline()
+    cdget = CalDVGetState()
+    cdget.connect()
+
+    if args.cals_long:
+        cdget.print_calendars(full_names=True)
+    elif args.cals:
+        cdget.print_calendars()
